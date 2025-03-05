@@ -5,7 +5,7 @@
     
     // Configuration
     const config = {
-      question: "Hi, thank you for your booking. A question before you go: If anything nearly stopped you booking today, what was it? Thanks!",
+      question: "Hi, thank you for your booking. Quick question before you go... If anything nearly stopped you booking today, what was it? Thanks!",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
       googleScriptUrl: "https://script.google.com/macros/s/AKfycbwxtRXDbW4OqyZk8oIxeYxAoCsRur8_mPkTdOCbApoIe-gIZBveAgq_LY1rEf1b05u5yw/exec"
     };
