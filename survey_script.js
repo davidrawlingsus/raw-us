@@ -1,4 +1,4 @@
-// Success Page Survey Overlay with Improved API Communication
+// Success Page Survey Overlay with Slack Integration
 (function() {
     // Only run on success page - ADJUST THIS PATH TO MATCH YOUR SUCCESS PAGE URL
     //if (!window.location.pathname.includes('/success')) return;
@@ -31,7 +31,65 @@
         color: #262626;
         outline: none;
       }
-      /* Other CSS remains the same */
+      .survey-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+      }
+      .survey-title {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: normal;
+        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
+        color: #262626;
+      }
+      .survey-textarea {
+        width: 100%;
+        height: 100px;
+        margin: 10px 0;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
+        color: #262626;
+      }
+      .survey-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+      }
+      .survey-submit, .survey-close {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
+      }
+      .survey-submit {
+        background-color: #6d2463;
+        color: white;
+        transition: background-color 0.3s ease;
+      }
+      .survey-submit:hover {
+        background-color: #5a1e52;
+      }
+      .survey-close {
+        background-color: #f1f1f1;
+        color: #262626;
+      }
+      .survey-thanks {
+        text-align: center;
+        padding: 20px;
+        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
+        color: #262626;
+      }
     `;
     document.head.appendChild(style);
     
@@ -68,7 +126,7 @@
       }
     }
     
-    // IMPROVED: Function to submit feedback with better error handling and logging
+    // Function to submit feedback with better error handling
     function submitFeedback(feedback) {
       console.log("Submitting feedback, length:", feedback.length);
       
@@ -92,7 +150,7 @@
       
       // Try POST first (preferred method)
       try {
-        console.log("Attempting POST request");
+        console.log("Attempting POST request to:", config.googleScriptUrl);
         
         fetch(config.googleScriptUrl, {
           method: 'POST',
@@ -190,36 +248,12 @@
       }, 3000);
     }
     
-    // IMPROVED: Add debug mode for testing
-    const isDebugMode = window.location.search.includes('debug=survey');
-    if (isDebugMode) {
-      console.log("Survey debug mode active");
-      // Add debug info to page
-      const debugDiv = document.createElement('div');
-      debugDiv.style.position = 'fixed';
-      debugDiv.style.bottom = '10px';
-      debugDiv.style.right = '10px';
-      debugDiv.style.background = 'black';
-      debugDiv.style.color = 'lime';
-      debugDiv.style.padding = '5px';
-      debugDiv.style.fontSize = '12px';
-      debugDiv.style.zIndex = '9999';
-      debugDiv.textContent = 'Survey Debug Mode';
-      document.body.appendChild(debugDiv);
-      
-      // Log config
-      console.log("Survey config:", config);
-    }
-    
     // Event listeners
     document.querySelector('.survey-submit').addEventListener('click', function() {
       const feedback = document.querySelector('.survey-textarea').value.trim();
       
       if (feedback) {
-        const submitResult = submitFeedback(feedback);
-        if (isDebugMode) {
-          console.log("Submit result:", submitResult);
-        }
+        submitFeedback(feedback);
         showThankYou();
       } else {
         alert("Please enter some feedback before submitting.");
