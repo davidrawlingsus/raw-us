@@ -125,37 +125,43 @@
       }
     }
     
-    // Function to submit feedback to Google Sheets - dual approach
-    function submitFeedback(feedback) {
-      const clarityId = getClarityId();
-      const timestamp = new Date().toISOString();
-      const pageUrl = window.location.href;
-      
-      // Prepare data for Google Sheets
-      const data = {
-        timestamp: timestamp,
-        feedback: feedback,
-        clarityId: clarityId,
-        url: pageUrl
-      };
-      
-      // Try POST method first (for production)
-      fetch(config.googleScriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      }).catch(() => {
-        // Fallback to GET method if POST fails
-        const jsonString = encodeURIComponent(JSON.stringify(data));
-        const url = `${config.googleScriptUrl}?data=${jsonString}`;
-        
-        const img = new Image();
-        img.src = url;
-      });
-    }
+    // Function to submit feedback to Google Sheets - improved approach
+function submitFeedback(feedback) {
+  const clarityId = getClarityId();
+  const timestamp = new Date().toISOString();
+  const pageUrl = window.location.href;
+  
+  // Prepare data for Google Sheets
+  const data = {
+    timestamp: timestamp,
+    feedback: feedback,
+    clarityId: clarityId,
+    url: pageUrl
+  };
+  
+  console.log("Submitting feedback:", data);
+  
+  // Try GET method first (more reliable with CORS restrictions)
+  const jsonString = encodeURIComponent(JSON.stringify(data));
+  const url = `${config.googleScriptUrl}?data=${jsonString}`;
+  
+  // Use fetch with GET instead of POST to avoid CORS issues
+  fetch(url, {
+    method: 'GET',
+    mode: 'no-cors'
+  })
+  .then(response => {
+    console.log("Feedback submitted successfully");
+  })
+  .catch(error => {
+    console.error("Error submitting feedback:", error);
+    
+    // Fallback to image method as last resort
+    const img = new Image();
+    img.src = url;
+    console.log("Using image fallback method");
+  });
+}
     
     // Function to show thank you message
     function showThankYou() {
