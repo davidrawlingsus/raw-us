@@ -141,43 +141,25 @@ function submitFeedback(feedback) {
   
   console.log("Submitting feedback:", data);
   
-  // Convert data to string for sending
-  const jsonData = JSON.stringify(data);
+  // Try GET method first as it's more reliable
+  const jsonString = encodeURIComponent(JSON.stringify(data));
+  const url = `${config.googleScriptUrl}?data=${jsonString}`;
   
-  // Try POST with correct Content-Type
-  fetch(config.googleScriptUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json' // Changed from text/plain
-    },
-    body: jsonData,
+  fetch(url, {
+    method: 'GET',
     mode: 'no-cors'
   })
   .then(() => {
-    console.log("Feedback submitted successfully");
+    console.log("Feedback submitted successfully via GET");
   })
   .catch(error => {
-    console.error("Error submitting feedback via POST:", error);
+    console.error("Error submitting feedback via GET:", error);
     
-    // Fallback to GET method if POST fails
-    const jsonString = encodeURIComponent(jsonData);
-    const url = `${config.googleScriptUrl}?data=${jsonString}`;
-    
-    fetch(url, {
-      method: 'GET',
-      mode: 'no-cors'
-    })
-    .then(() => {
-      console.log("Feedback submitted successfully via GET fallback");
-    })
-    .catch(err => {
-      console.error("Both POST and GET failed:", err);
-      
-      // Last resort - Image fallback method
-      const img = new Image();
-      img.src = url;
-      console.log("Using image fallback method");
-    });
+    // Fallback to image method for extreme reliability
+    const img = new Image();
+    img.onload = function() { console.log("Image method completed"); };
+    img.onerror = function() { console.error("Image method failed"); };
+    img.src = url;
   });
 }
     
