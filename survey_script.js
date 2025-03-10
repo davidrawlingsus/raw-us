@@ -7,7 +7,7 @@
     const config = {
       question: "Thank you for choosing Martin Randall Travel. Before you go, was there anything that almost prevented you from completing your reservation today?",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
-      googleScriptUrl: "https://script.google.com/macros/s/AKfycbwxtRXDbW4OqyZk8oIxeYxAoCsRur8_mPkTdOCbApoIe-gIZBveAgq_LY1rEf1b05u5yw/exec"
+      googleScriptUrl: "https://script.google.com/macros/s/AKfycbzpCnWxQEnWLoWn6rWElGD1VDUOUJBGxpLxKYRe5bYcXN0tYsC7IdGpgMWKISoOcmo61Q/exec"
     };
     
     // Create and append CSS to head
