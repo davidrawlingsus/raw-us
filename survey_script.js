@@ -1,4 +1,4 @@
-// Success Page Survey Overlay with Google Sheets Integration
+// Success Page Survey Overlay with Google Sheets and Slack Integration
 (function() {
     // Only run on success page - ADJUST THIS PATH TO MATCH YOUR SUCCESS PAGE URL
     //if (!window.location.pathname.includes('/success')) return;
@@ -7,6 +7,7 @@
     const config = {
       question: "Thank you for choosing Martin Randall Travel. Before you go, was there anything that almost prevented you from completing your reservation today?",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
+      // Make sure this URL is the most recent deployment URL from your Google Apps Script
       googleScriptUrl: "https://script.google.com/macros/s/AKfycbzH38jZpdCqCpkecbn2frqzSKT2TKe4H9fWTnxCdasWjBTqKBEyofSkgpDH7DBGC3SAew/exec"
     };
     
@@ -125,43 +126,64 @@
       }
     }
     
-// Function to submit feedback to Google Sheets
-function submitFeedback(feedback) {
-  const clarityId = getClarityId();
-  const timestamp = new Date().toISOString();
-  const pageUrl = window.location.href;
-  
-  // Prepare data for Google Sheets
-  const data = {
-    timestamp: timestamp,
-    feedback: feedback,
-    clarityId: clarityId,
-    url: pageUrl
-  };
-  
-  console.log("Submitting feedback:", data);
-  
-  // Try GET method first as it's more reliable
-  const jsonString = encodeURIComponent(JSON.stringify(data));
-  const url = `${config.googleScriptUrl}?data=${jsonString}`;
-  
-  fetch(url, {
-    method: 'GET',
-    mode: 'no-cors'
-  })
-  .then(() => {
-    console.log("Feedback submitted successfully via GET");
-  })
-  .catch(error => {
-    console.error("Error submitting feedback via GET:", error);
-    
-    // Fallback to image method for extreme reliability
-    const img = new Image();
-    img.onload = function() { console.log("Image method completed"); };
-    img.onerror = function() { console.error("Image method failed"); };
-    img.src = url;
-  });
-}
+    // Function to submit feedback to Google Sheets and Slack
+    function submitFeedback(feedback) {
+      const clarityId = getClarityId();
+      const timestamp = new Date().toISOString();
+      const pageUrl = window.location.href;
+      
+      // Prepare data for Google Sheets and Slack
+      const data = {
+        timestamp: timestamp,
+        feedback: feedback,
+        clarityId: clarityId,
+        url: pageUrl
+      };
+      
+      console.log("Submitting feedback:", data);
+      
+      // Try GET method with the proper parameter format
+      const jsonString = encodeURIComponent(JSON.stringify(data));
+      const url = `${config.googleScriptUrl}?data=${jsonString}`;
+      
+      // Add a timestamp parameter to avoid caching
+      const urlWithNoCache = `${url}&nocache=${new Date().getTime()}`;
+      
+      // First attempt - Use Fetch API
+      fetch(urlWithNoCache, {
+        method: 'GET',
+        mode: 'no-cors'
+      })
+      .then(response => {
+        console.log("Feedback submitted successfully via Fetch");
+        // We can't actually check response.ok with no-cors mode
+      })
+      .catch(error => {
+        console.error("Error submitting feedback via Fetch:", error);
+        
+        // Fallback - Use XHR which may provide more details on errors
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', urlWithNoCache, true);
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log("Feedback submitted successfully via XHR");
+            console.log("Response:", xhr.responseText);
+          } else {
+            console.error("XHR error:", xhr.status, xhr.statusText);
+          }
+        };
+        xhr.onerror = function() {
+          console.error("XHR network error");
+          
+          // Final fallback - Image method for extreme reliability
+          const img = new Image();
+          img.onload = function() { console.log("Image method completed"); };
+          img.onerror = function() { console.error("Image method failed"); };
+          img.src = urlWithNoCache;
+        };
+        xhr.send();
+      });
+    }
     
     // Function to show thank you message
     function showThankYou() {
@@ -204,4 +226,10 @@ function submitFeedback(feedback) {
         }
       }
     });
+    
+    // Add this for easy testing in console
+    window.testSurveyFeedback = function(feedback) {
+      submitFeedback(feedback || "This is a test feedback from console");
+      return "Test feedback submitted";
+    };
   })();
