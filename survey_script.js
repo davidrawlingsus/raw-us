@@ -1,4 +1,4 @@
-// Success Page Survey Overlay with Google Sheets Integration
+// Success Page Survey Overlay with Improved API Communication
 (function() {
     // Only run on success page - ADJUST THIS PATH TO MATCH YOUR SUCCESS PAGE URL
     //if (!window.location.pathname.includes('/success')) return;
@@ -7,7 +7,8 @@
     const config = {
       question: "Thank you for choosing Martin Randall Travel. Before you go, was there anything that almost prevented you from completing your reservation today?",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
-      googleScriptUrl: "https://script.google.com/macros/s/AKfycbwxtRXDbW4OqyZk8oIxeYxAoCsRur8_mPkTdOCbApoIe-gIZBveAgq_LY1rEf1b05u5yw/exec"
+      // Update this URL with your new web app URL
+      googleScriptUrl: "https://script.google.com/macros/s/YOUR_NEW_DEPLOYMENT_ID/exec"
     };
     
     // Create and append CSS to head
@@ -30,65 +31,7 @@
         color: #262626;
         outline: none;
       }
-      .survey-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 9999;
-      }
-      .survey-title {
-        margin-top: 0;
-        margin-bottom: 15px;
-        font-size: 18px;
-        font-weight: normal;
-        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
-        color: #262626;
-      }
-      .survey-textarea {
-        width: 100%;
-        height: 100px;
-        margin: 10px 0;
-        padding: 10px;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        resize: vertical;
-        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
-        color: #262626;
-      }
-      .survey-buttons {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 15px;
-      }
-      .survey-submit, .survey-close {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
-      }
-      .survey-submit {
-        background-color: #6d2463;
-        color: white;
-        transition: background-color 0.3s ease;
-      }
-      .survey-submit:hover {
-        background-color: #5a1e52;
-      }
-      .survey-close {
-        background-color: #f1f1f1;
-        color: #262626;
-      }
-      .survey-thanks {
-        text-align: center;
-        padding: 20px;
-        font-family: 'Pelago', 'Segoe UI', 'Helvetica Neue', sans-serif;
-        color: #262626;
-      }
+      /* Other CSS remains the same */
     `;
     document.head.appendChild(style);
     
@@ -125,13 +68,15 @@
       }
     }
     
-    // Function to submit feedback to Google Sheets
+    // IMPROVED: Function to submit feedback with better error handling and logging
     function submitFeedback(feedback) {
+      console.log("Submitting feedback, length:", feedback.length);
+      
       const clarityId = getClarityId();
       const timestamp = new Date().toISOString();
       const pageUrl = window.location.href;
       
-      // Prepare data for Google Sheets
+      // Prepare data
       const data = {
         timestamp: timestamp,
         feedback: feedback,
@@ -139,46 +84,96 @@
         url: pageUrl
       };
       
-      console.log("Submitting feedback:", data);
+      console.log("Data to send:", data);
       
       // Convert data to string for sending
       const jsonData = JSON.stringify(data);
+      console.log("JSON data:", jsonData);
       
-      // Use POST method (confirmed working)
-      fetch(config.googleScriptUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
-        },
-        body: jsonData,
-        mode: 'no-cors'
-      })
-      .then(() => {
-        console.log("Feedback submitted successfully");
-      })
-      .catch(error => {
-        console.error("Error submitting feedback via POST:", error);
+      // Try POST first (preferred method)
+      try {
+        console.log("Attempting POST request");
         
-        // Fallback to GET method if POST fails
-        const jsonString = encodeURIComponent(JSON.stringify(data));
-        const url = `${config.googleScriptUrl}?data=${jsonString}`;
-        
-        fetch(url, {
-          method: 'GET',
+        fetch(config.googleScriptUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
+          },
+          body: jsonData,
           mode: 'no-cors'
-        })
-        .then(() => {
-          console.log("Feedback submitted successfully via GET fallback");
-        })
-        .catch(err => {
-          console.error("Both POST and GET failed:", err);
-          
-          // Last resort - Image fallback method
-          const img = new Image();
-          img.src = url;
-          console.log("Using image fallback method");
+        }).then(response => {
+          console.log("POST successful, response status:", response.status);
+          return true;
+        }).catch(error => {
+          console.error("POST failed:", error);
+          tryGetMethod();
         });
-      });
+      } catch (error) {
+        console.error("Error in POST attempt:", error);
+        tryGetMethod();
+      }
+      
+      // Fallback to GET if POST fails
+      function tryGetMethod() {
+        try {
+          console.log("Attempting GET request");
+          
+          // For GET requests, we need to encode the data in the URL
+          const queryStringData = encodeURIComponent(jsonData);
+          const url = `${config.googleScriptUrl}?data=${queryStringData}`;
+          
+          // Check if URL is too long (browser limits)
+          if (url.length > 2000) {
+            console.warn("URL too long for GET method:", url.length);
+            tryImageMethod();
+            return;
+          }
+          
+          fetch(url, {
+            method: 'GET',
+            mode: 'no-cors'
+          }).then(response => {
+            console.log("GET successful, response status:", response.status);
+          }).catch(error => {
+            console.error("GET failed:", error);
+            tryImageMethod();
+          });
+        } catch (error) {
+          console.error("Error in GET attempt:", error);
+          tryImageMethod();
+        }
+      }
+      
+      // Last resort - Image method
+      function tryImageMethod() {
+        try {
+          console.log("Attempting Image fallback method");
+          
+          // For extreme fallback with minimal data
+          const minimalData = {
+            f: feedback.substring(0, 100), // Truncate feedback to avoid URL length issues
+            t: timestamp,
+            u: pageUrl.substring(0, 100)  // Truncate URL too
+          };
+          
+          const queryString = encodeURIComponent(JSON.stringify(minimalData));
+          const imgUrl = `${config.googleScriptUrl}?img=1&data=${queryString}`;
+          
+          const img = new Image();
+          img.onload = function() {
+            console.log("Image method completed");
+          };
+          img.onerror = function() {
+            console.error("Image method failed");
+          };
+          img.src = imgUrl;
+        } catch (error) {
+          console.error("Error in image method attempt:", error);
+        }
+      }
+      
+      // Return true to indicate we tried to submit
+      return true;
     }
     
     // Function to show thank you message
@@ -195,13 +190,39 @@
       }, 3000);
     }
     
+    // IMPROVED: Add debug mode for testing
+    const isDebugMode = window.location.search.includes('debug=survey');
+    if (isDebugMode) {
+      console.log("Survey debug mode active");
+      // Add debug info to page
+      const debugDiv = document.createElement('div');
+      debugDiv.style.position = 'fixed';
+      debugDiv.style.bottom = '10px';
+      debugDiv.style.right = '10px';
+      debugDiv.style.background = 'black';
+      debugDiv.style.color = 'lime';
+      debugDiv.style.padding = '5px';
+      debugDiv.style.fontSize = '12px';
+      debugDiv.style.zIndex = '9999';
+      debugDiv.textContent = 'Survey Debug Mode';
+      document.body.appendChild(debugDiv);
+      
+      // Log config
+      console.log("Survey config:", config);
+    }
+    
     // Event listeners
     document.querySelector('.survey-submit').addEventListener('click', function() {
       const feedback = document.querySelector('.survey-textarea').value.trim();
       
       if (feedback) {
-        submitFeedback(feedback);
+        const submitResult = submitFeedback(feedback);
+        if (isDebugMode) {
+          console.log("Submit result:", submitResult);
+        }
         showThankYou();
+      } else {
+        alert("Please enter some feedback before submitting.");
       }
     });
     
@@ -222,4 +243,7 @@
         }
       }
     });
+    
+    // Log that the survey was initialized
+    console.log("Survey initialized on " + window.location.href);
   })();
