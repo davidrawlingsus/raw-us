@@ -126,60 +126,67 @@
     }
     
     // Function to submit feedback to Google Sheets
-    function submitFeedback(feedback) {
-      const clarityId = getClarityId();
-      const timestamp = new Date().toISOString();
-      const pageUrl = window.location.href;
+function submitFeedback(feedback) {
+  const clarityId = getClarityId();
+  const timestamp = new Date().toISOString();
+  const pageUrl = window.location.href;
+  
+  // Prepare data for Google Sheets
+  const data = {
+    timestamp: timestamp,
+    feedback: feedback,
+    clarityId: clarityId,
+    url: pageUrl
+  };
+  
+  console.log("Submitting feedback to URL:", config.googleScriptUrl);
+  console.log("Data being sent:", data);
+  
+  // Convert data to string for sending
+  const jsonData = JSON.stringify(data);
+  
+  // Use POST method (confirmed working)
+  console.log("Attempting POST request...");
+  fetch(config.googleScriptUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
+    },
+    body: jsonData,
+    mode: 'no-cors'
+  })
+  .then((response) => {
+    console.log("POST response received:", response);
+    console.log("Feedback submitted successfully");
+  })
+  .catch(error => {
+    console.error("Error submitting feedback via POST:", error);
+    
+    // Fallback to GET method if POST fails
+    console.log("Attempting GET fallback...");
+    const jsonString = encodeURIComponent(JSON.stringify(data));
+    const url = `${config.googleScriptUrl}?data=${jsonString}`;
+    
+    fetch(url, {
+      method: 'GET',
+      mode: 'no-cors'
+    })
+    .then((response) => {
+      console.log("GET response received:", response);
+      console.log("Feedback submitted successfully via GET fallback");
+    })
+    .catch(err => {
+      console.error("Both POST and GET failed:", err);
       
-      // Prepare data for Google Sheets
-      const data = {
-        timestamp: timestamp,
-        feedback: feedback,
-        clarityId: clarityId,
-        url: pageUrl
-      };
-      
-      console.log("Submitting feedback:", data);
-      
-      // Convert data to string for sending
-      const jsonData = JSON.stringify(data);
-      
-      // Use POST method (confirmed working)
-      fetch(config.googleScriptUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
-        },
-        body: jsonData,
-        mode: 'no-cors'
-      })
-      .then(() => {
-        console.log("Feedback submitted successfully");
-      })
-      .catch(error => {
-        console.error("Error submitting feedback via POST:", error);
-        
-        // Fallback to GET method if POST fails
-        const jsonString = encodeURIComponent(JSON.stringify(data));
-        const url = `${config.googleScriptUrl}?data=${jsonString}`;
-        
-        fetch(url, {
-          method: 'GET',
-          mode: 'no-cors'
-        })
-        .then(() => {
-          console.log("Feedback submitted successfully via GET fallback");
-        })
-        .catch(err => {
-          console.error("Both POST and GET failed:", err);
-          
-          // Last resort - Image fallback method
-          const img = new Image();
-          img.src = url;
-          console.log("Using image fallback method");
-        });
-      });
-    }
+      // Last resort - Image fallback method
+      console.log("Attempting image fallback method...");
+      const img = new Image();
+      img.onload = () => console.log("Image loaded successfully");
+      img.onerror = () => console.error("Image failed to load");
+      img.src = url;
+    });
+  });
+}
     
     // Function to show thank you message
     function showThankYou() {
