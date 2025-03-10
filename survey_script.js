@@ -5,7 +5,7 @@
     
     // Configuration
     const config = {
-      question: "Hi, thank you for your booking. Quick question before you go... If anything nearly stopped you booking today, what was it? Thanks!",
+      question: "Thank you for choosing Martin Randall Travel. Before you go, was there anything that almost prevented you from completing your reservation today?",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
       googleScriptUrl: "https://script.google.com/macros/s/AKfycbwxtRXDbW4OqyZk8oIxeYxAoCsRur8_mPkTdOCbApoIe-gIZBveAgq_LY1rEf1b05u5yw/exec"
     };
