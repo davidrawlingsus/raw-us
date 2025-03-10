@@ -125,8 +125,7 @@
       }
     }
     
-    // Function to submit feedback to Google Sheets - improved approach
-function submitFeedback(feedback) {
+    function submitFeedback(feedback) {
   const clarityId = getClarityId();
   const timestamp = new Date().toISOString();
   const pageUrl = window.location.href;
@@ -141,25 +140,23 @@ function submitFeedback(feedback) {
   
   console.log("Submitting feedback:", data);
   
-  // Try GET method first (more reliable with CORS restrictions)
-  const jsonString = encodeURIComponent(JSON.stringify(data));
-  const url = `${config.googleScriptUrl}?data=${jsonString}`;
+  // Convert data to string for sending
+  const jsonData = JSON.stringify(data);
   
-  // Use fetch with GET instead of POST to avoid CORS issues
-  fetch(url, {
-    method: 'GET',
+  // Use POST method
+  fetch(config.googleScriptUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
+    },
+    body: jsonData,
     mode: 'no-cors'
   })
-  .then(response => {
+  .then(() => {
     console.log("Feedback submitted successfully");
   })
   .catch(error => {
     console.error("Error submitting feedback:", error);
-    
-    // Fallback to image method as last resort
-    const img = new Image();
-    img.src = url;
-    console.log("Using image fallback method");
   });
 }
     
