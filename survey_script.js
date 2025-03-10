@@ -1,4 +1,4 @@
-// Success Page Survey Overlay with Slack Integration
+// Success Page Survey Overlay with Google Sheets Integration
 (function() {
     // Only run on success page - ADJUST THIS PATH TO MATCH YOUR SUCCESS PAGE URL
     //if (!window.location.pathname.includes('/success')) return;
@@ -7,8 +7,7 @@
     const config = {
       question: "Thank you for choosing Martin Randall Travel. Before you go, was there anything that almost prevented you from completing your reservation today?",
       thankYouMessage: "Thank you for your feedback! We appreciate your input.",
-      // Update this URL with your new web app URL
-      googleScriptUrl: "https://script.google.com/macros/s/YOUR_NEW_DEPLOYMENT_ID/exec"
+      googleScriptUrl: "https://script.google.com/macros/s/AKfycbwxtRXDbW4OqyZk8oIxeYxAoCsRur8_mPkTdOCbApoIe-gIZBveAgq_LY1rEf1b05u5yw/exec"
     };
     
     // Create and append CSS to head
@@ -126,15 +125,13 @@
       }
     }
     
-    // Function to submit feedback with better error handling
+    // Function to submit feedback to Google Sheets
     function submitFeedback(feedback) {
-      console.log("Submitting feedback, length:", feedback.length);
-      
       const clarityId = getClarityId();
       const timestamp = new Date().toISOString();
       const pageUrl = window.location.href;
       
-      // Prepare data
+      // Prepare data for Google Sheets
       const data = {
         timestamp: timestamp,
         feedback: feedback,
@@ -142,96 +139,46 @@
         url: pageUrl
       };
       
-      console.log("Data to send:", data);
+      console.log("Submitting feedback:", data);
       
       // Convert data to string for sending
       const jsonData = JSON.stringify(data);
-      console.log("JSON data:", jsonData);
       
-      // Try POST first (preferred method)
-      try {
-        console.log("Attempting POST request to:", config.googleScriptUrl);
+      // Use POST method (confirmed working)
+      fetch(config.googleScriptUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
+        },
+        body: jsonData,
+        mode: 'no-cors'
+      })
+      .then(() => {
+        console.log("Feedback submitted successfully");
+      })
+      .catch(error => {
+        console.error("Error submitting feedback via POST:", error);
         
-        fetch(config.googleScriptUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
-          },
-          body: jsonData,
+        // Fallback to GET method if POST fails
+        const jsonString = encodeURIComponent(JSON.stringify(data));
+        const url = `${config.googleScriptUrl}?data=${jsonString}`;
+        
+        fetch(url, {
+          method: 'GET',
           mode: 'no-cors'
-        }).then(response => {
-          console.log("POST successful, response status:", response.status);
-          return true;
-        }).catch(error => {
-          console.error("POST failed:", error);
-          tryGetMethod();
-        });
-      } catch (error) {
-        console.error("Error in POST attempt:", error);
-        tryGetMethod();
-      }
-      
-      // Fallback to GET if POST fails
-      function tryGetMethod() {
-        try {
-          console.log("Attempting GET request");
+        })
+        .then(() => {
+          console.log("Feedback submitted successfully via GET fallback");
+        })
+        .catch(err => {
+          console.error("Both POST and GET failed:", err);
           
-          // For GET requests, we need to encode the data in the URL
-          const queryStringData = encodeURIComponent(jsonData);
-          const url = `${config.googleScriptUrl}?data=${queryStringData}`;
-          
-          // Check if URL is too long (browser limits)
-          if (url.length > 2000) {
-            console.warn("URL too long for GET method:", url.length);
-            tryImageMethod();
-            return;
-          }
-          
-          fetch(url, {
-            method: 'GET',
-            mode: 'no-cors'
-          }).then(response => {
-            console.log("GET successful, response status:", response.status);
-          }).catch(error => {
-            console.error("GET failed:", error);
-            tryImageMethod();
-          });
-        } catch (error) {
-          console.error("Error in GET attempt:", error);
-          tryImageMethod();
-        }
-      }
-      
-      // Last resort - Image method
-      function tryImageMethod() {
-        try {
-          console.log("Attempting Image fallback method");
-          
-          // For extreme fallback with minimal data
-          const minimalData = {
-            f: feedback.substring(0, 100), // Truncate feedback to avoid URL length issues
-            t: timestamp,
-            u: pageUrl.substring(0, 100)  // Truncate URL too
-          };
-          
-          const queryString = encodeURIComponent(JSON.stringify(minimalData));
-          const imgUrl = `${config.googleScriptUrl}?img=1&data=${queryString}`;
-          
+          // Last resort - Image fallback method
           const img = new Image();
-          img.onload = function() {
-            console.log("Image method completed");
-          };
-          img.onerror = function() {
-            console.error("Image method failed");
-          };
-          img.src = imgUrl;
-        } catch (error) {
-          console.error("Error in image method attempt:", error);
-        }
-      }
-      
-      // Return true to indicate we tried to submit
-      return true;
+          img.src = url;
+          console.log("Using image fallback method");
+        });
+      });
     }
     
     // Function to show thank you message
@@ -255,8 +202,6 @@
       if (feedback) {
         submitFeedback(feedback);
         showThankYou();
-      } else {
-        alert("Please enter some feedback before submitting.");
       }
     });
     
@@ -277,7 +222,4 @@
         }
       }
     });
-    
-    // Log that the survey was initialized
-    console.log("Survey initialized on " + window.location.href);
   })();
