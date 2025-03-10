@@ -125,7 +125,7 @@
       }
     }
     
-    // Function to submit feedback to Google Sheets
+// Function to submit feedback to Google Sheets
 function submitFeedback(feedback) {
   const clarityId = getClarityId();
   const timestamp = new Date().toISOString();
@@ -139,51 +139,44 @@ function submitFeedback(feedback) {
     url: pageUrl
   };
   
-  console.log("Submitting feedback to URL:", config.googleScriptUrl);
-  console.log("Data being sent:", data);
+  console.log("Submitting feedback:", data);
   
   // Convert data to string for sending
   const jsonData = JSON.stringify(data);
   
-  // Use POST method (confirmed working)
-  console.log("Attempting POST request...");
+  // Try POST with correct Content-Type
   fetch(config.googleScriptUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'text/plain' // Use text/plain to avoid CORS preflight
+      'Content-Type': 'application/json' // Changed from text/plain
     },
     body: jsonData,
     mode: 'no-cors'
   })
-  .then((response) => {
-    console.log("POST response received:", response);
+  .then(() => {
     console.log("Feedback submitted successfully");
   })
   .catch(error => {
     console.error("Error submitting feedback via POST:", error);
     
     // Fallback to GET method if POST fails
-    console.log("Attempting GET fallback...");
-    const jsonString = encodeURIComponent(JSON.stringify(data));
+    const jsonString = encodeURIComponent(jsonData);
     const url = `${config.googleScriptUrl}?data=${jsonString}`;
     
     fetch(url, {
       method: 'GET',
       mode: 'no-cors'
     })
-    .then((response) => {
-      console.log("GET response received:", response);
+    .then(() => {
       console.log("Feedback submitted successfully via GET fallback");
     })
     .catch(err => {
       console.error("Both POST and GET failed:", err);
       
       // Last resort - Image fallback method
-      console.log("Attempting image fallback method...");
       const img = new Image();
-      img.onload = () => console.log("Image loaded successfully");
-      img.onerror = () => console.error("Image failed to load");
       img.src = url;
+      console.log("Using image fallback method");
     });
   });
 }
