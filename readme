@@ -1,0 +1,114 @@
+# Survey to Slack Integration
+
+This project integrates a customer feedback survey with Google Sheets and Slack notifications. When a customer submits feedback through the survey, the data is stored in Google Sheets and a notification is sent to a designated Slack channel.
+
+## Architecture
+
+The integration consists of three components:
+
+1. **Client-side Survey**: JavaScript-based survey popup for user feedback
+2. **Google Apps Script**: Backend that processes submissions and sends Slack notifications
+3. **Slack Integration**: Notifications sent to a specified Slack channel
+
+## Setup Instructions
+
+### 1. Google Sheet Setup
+
+1. Create a Google Sheet to store feedback
+2. Note the spreadsheet ID from the URL: `https://docs.google.com/spreadsheets/d/[YOUR-SHEET-ID]/edit`
+3. Create a sheet named "Feedback" with the following columns:
+   - Timestamp
+   - Feedback
+   - Clarity ID
+   - URL
+   - Status (for Slack processing status)
+
+### 2. Google Apps Script Setup
+
+1. Open the Google Sheet
+2. Go to Extensions > Apps Script
+3. Copy and paste the backend script code
+4. Replace the hardcoded spreadsheet ID if necessary
+5. Save the script
+
+### 3. Slack App Configuration
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps)
+2. Create a new Slack app
+3. Under "OAuth & Permissions", add the following scopes:
+   - `chat:write`
+   - `channels:read`
+4. Install the app to your workspace
+5. Copy the Bot User OAuth Token (starts with `xoxb-`)
+6. Invite the bot to your target channel using: `/invite @YourBotName`
+7. Get the channel ID (right-click on the channel and "Copy Link")
+
+### 4. Configure the Google Apps Script
+
+1. In the Apps Script editor, run the `configureSlack` function
+2. When prompted, replace with your Slack token and channel ID
+3. Run the `verifySlackConnection` function to test the connection
+4. Set up the time trigger by running the `createTrigger` function
+
+### 5. Deploy as Web App
+
+1. Click Deploy > New deployment
+2. Select "Web app" as the type
+3. Set "Execute as" to your account
+4. Set "Who has access" based on your needs (typically "Anyone" or "Anyone with Google account")
+5. Copy the web app URL for your client-side code
+
+### 6. Client-Side Integration
+
+1. Update your survey code with the web app URL
+2. Test the form submission
+
+## Code Explanation
+
+### Google Apps Script Components
+
+1. `doGet(e)`: Handles incoming web requests and adds data to the spreadsheet
+2. `sendToSlackAPI(data)`: Sends formatted notifications to Slack
+3. `processNewFeedback()`: Checks for new feedback entries and processes Slack notifications
+4. `createTrigger()`: Sets up a time-based trigger to run every minute
+5. Various helper functions for testing and configuration
+
+### Client-Side Components
+
+1. Survey overlay with CSS styling
+2. Form submission handler
+3. Data collection (feedback, Clarity ID, URL)
+4. API submission to Google Apps Script
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Data saved but no Slack notification**:
+   - Verify the trigger is set up properly (check Apps Script triggers)
+   - Ensure the bot is invited to the channel
+   - Check column E in the spreadsheet for error messages
+
+2. **Authorization errors**:
+   - Run `configureSlack` again with valid credentials
+   - Verify the bot has proper permissions in Slack
+
+3. **Channel not found error**:
+   - Ensure you're using the correct channel ID
+   - Verify the bot is a member of the channel
+
+## How It Works
+
+This integration uses a key pattern to handle potential execution timeouts or permission issues:
+
+1. When feedback is submitted, it's immediately saved to the spreadsheet
+2. A time-triggered function runs every minute to check for new entries
+3. New entries (with empty status in column E) are processed and sent to Slack
+4. The status column is updated with the result
+
+This separation of data collection and processing ensures reliability even with slower external API calls.
+
+## Credits and References
+
+- Google Apps Script documentation: [https://developers.google.com/apps-script](https://developers.google.com/apps-script)
+- Slack API documentation: [https://api.slack.com/](https://api.slack.com/)
